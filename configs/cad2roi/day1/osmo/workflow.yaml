@@ -1,0 +1,158 @@
+# cad2roi — OSMO Workflow
+#
+# See references/osmo.md for full setup, submission, and troubleshooting guide.
+#
+# Quick start:
+#   osmo dataset upload cad2roi-assets /path/to/assets-dir/.
+#   osmo workflow submit assets/configs/osmo/workflow.yaml --pool <pool>
+
+workflow:
+  name: cad2roi
+
+  tasks:
+
+  # ── configure ────────────────────────────────────────────────────────────────
+  # Lightweight CPU task: patches scene / real_image into the uploaded config.
+  # Uses plain python:3.10-slim — no Omniverse needed here.
+  - name: configure
+    image: python:3.10-slim
+    command: [bash]
+    args: [/tmp/run.sh]
+    files:
+    - contents: |
+        set -euo pipefail
+        pip install pyyaml -q
+
+        python3 - <<'PYEOF'
+        import yaml, os
+
+        assets = "{{input:0}}"
+        out    = "{{output}}"
+
+        cfg = yaml.safe_load(open(f"{assets}/config.yaml"))
+        cfg["scene"]      = f"{assets}/scene.usd"
+        cfg["real_image"] = f"{assets}/real.png"
+        cfg["output"]     = {"dir": out}   # placeholder — each stage patches this
+
+        os.makedirs(out, exist_ok=True)
+        with open(f"{out}/cad2roi.yaml", "w") as f:
+            yaml.dump(cfg, f)
+        PYEOF
+      path: /tmp/run.sh
+    inputs:
+    - dataset: cad2roi-assets            # {{input:0}}
+    outputs:
+    - dataset:
+        name: cad2roi-config    resource: small-cpu
+
+  # ── render ───────────────────────────────────────────────────────────────────
+  # Omniverse Kit render: ortho frame + semantic seg + bboxes.
+  # GPU required (OptiX). Cold-start ~6-7 min.
+  - name: render
+    image: ${SDG_IMAGE}
+    command: [bash]
+    args: [/tmp/run.sh]
+    files:
+    - contents: |
+        set -euo pipefail
+
+        CONFIG_OUT="{{input:0}}"
+        OUT="{{output}}"
+        mkdir -p "$OUT/sdg"
+
+        # Patch output.dir to this task's output path
+        cp "$CONFIG_OUT/cad2roi.yaml" /tmp/cad2roi.yaml
+        sed -i "s|  dir:.*|  dir: $OUT|" /tmp/cad2roi.yaml
+        cp /tmp/cad2roi.yaml "$OUT/cad2roi.yaml"
+
+        /isaac-sim/kit/kit /isaac-sim/apps/isaacsim.exp.base.kit --no-window --allow-root --exec \
+          "python3 /workspace/paidf-simulation/scripts/usd2roi/usd2roi_render.py \
+           --config /tmp/cad2roi.yaml"
+      path: /tmp/run.sh
+    inputs:
+    - task: configure                    # {{input:0}}
+    outputs:
+    - dataset:
+        name: cad2roi-render    resource: render-gpu
+
+  # ── register ─────────────────────────────────────────────────────────────────
+  # MI alignment of synthetic render to real photo. GPU via cupy, ~15-30 s.
+  # usd2roi_register.py expects sdg/ under output.dir — symlinked in from render.
+  - name: register
+    image: ${SDG_IMAGE}
+    command: [bash]
+    args: [/tmp/run.sh]
+    files:
+    - contents: |
+        set -euo pipefail
+
+        RENDER_OUT="{{input:0}}"
+        OUT="{{output}}"
+        mkdir -p "$OUT/aligned"
+
+        cp "$RENDER_OUT/cad2roi.yaml" /tmp/cad2roi.yaml
+        sed -i "s|  dir:.*|  dir: $OUT|" /tmp/cad2roi.yaml
+        ln -sfn "$RENDER_OUT/sdg" "$OUT/sdg"
+        cp /tmp/cad2roi.yaml "$OUT/cad2roi.yaml"
+
+        /isaac-sim/kit/kit /isaac-sim/apps/isaacsim.exp.base.kit --no-window --allow-root --exec \
+          "python3 /workspace/paidf-simulation/scripts/usd2roi/usd2roi_register.py \
+           --config /tmp/cad2roi.yaml"
+      path: /tmp/run.sh
+    inputs:
+    - task: render                       # {{input:0}}
+    outputs:
+    - dataset:
+        name: cad2roi-aligned    resource: register-gpu
+
+  # ── crop ─────────────────────────────────────────────────────────────────────
+  # Per-ROI triple extraction (synth / real / seg mask). CPU only, seconds.
+  # Needs sdg/ (render) and aligned/ (register) — both symlinked in.
+  - name: crop
+    image: ${SDG_IMAGE}
+    command: [bash]
+    args: [/tmp/run.sh]
+    files:
+    - contents: |
+        set -euo pipefail
+
+        RENDER_OUT="{{input:0}}"
+        REGISTER_OUT="{{input:1}}"
+        OUT="{{output}}"
+        mkdir -p "$OUT/components"
+
+        cp "$REGISTER_OUT/cad2roi.yaml" /tmp/cad2roi.yaml
+        sed -i "s|  dir:.*|  dir: $OUT|" /tmp/cad2roi.yaml
+        ln -sfn "$RENDER_OUT/sdg"       "$OUT/sdg"
+        ln -sfn "$REGISTER_OUT/aligned" "$OUT/aligned"
+
+        /isaac-sim/kit/kit /isaac-sim/apps/isaacsim.exp.base.kit --no-window --allow-root --exec \
+          "python3 /workspace/paidf-simulation/scripts/usd2roi/usd2roi_crop.py \
+           --config /tmp/cad2roi.yaml"
+      path: /tmp/run.sh
+    inputs:
+    - task: render                       # {{input:0}} — sdg/
+    - task: register                     # {{input:1}} — aligned/ + config
+    outputs:
+    - dataset:
+        name: cad2roi-components    resource: crop-cpu
+
+  resources:
+    small-cpu:
+      cpu: 2
+      memory: 4Gi
+      storage: 5Gi
+    render-gpu:
+      gpu: 1
+      cpu: 12
+      memory: 64Gi
+      storage: 100Gi
+    register-gpu:
+      gpu: 1
+      cpu: 8
+      memory: 32Gi
+      storage: 50Gi
+    crop-cpu:
+      cpu: 8
+      memory: 16Gi
+      storage: 50Gi

@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+---
+
+# Python codestyle (pcb-aoi)
+
+This repository is **not** an Isaac Sim extension tree. Python lives mainly under `scripts/` (SDG, USD→ROI, procedural board, editors). There is **no** repo-wide formatter or `./repo.sh` lint wrapper configured here.
+
+## Python version and typing
+
+- Target **Python 3.10+** (`requires-python` in `pyproject.toml`).
+- Prefer **PEP 604** unions and builtins: `X | Y`, `list[str]`, `dict[str, int]` (not `typing.List`, `Optional` unless needed for quirks).
+- Use **`from __future__ import annotations`** in new modules when forward references or cleaner annotations help; match the style of the file you edit.
+- Put **types in signatures**, not in docstrings (see `python_docstrings.mdc`).
+
+## USD / Omniverse code
+
+- For **USD stage and prim work**, prefer **`pxr`** types and APIs already used in this repo: `Usd`, `UsdGeom`, `UsdLux`, `UsdShade`, `Gf`, `Sdf`, `Vt`, etc. Use `str` for prim paths when that is clearer than `Sdf.Path`.
+- In **Kit / Isaac Sim app** contexts, using **`omni.usd.get_context().get_stage()`** and other `omni.*` APIs is fine when the module already runs inside Kit.
+- **Do not** introduce or require **`isaacsim.core.experimental`** (or other Isaac Sim high-level prim wrappers) for USD work unless the file **already** depends on that package. Prefer `pxr` plus explicit prim paths and `Usd.Prim` / schema helpers.
+
+## Imports and structure
+
+- **Import blocks** (same spirit as **isort** “profile black”, even though nothing runs it in CI):
+  1. `from __future__ import annotations` when the file uses it, then a blank line
+  2. stdlib
+  3. blank line
+  4. third party (`numpy`, `pxr`, `omni.*`, `carb`, …)
+  5. blank line
+  6. local / same-directory helpers (`from scan_grid_geometry import …`, etc.)
+- Sort names alphabetically within each block when practical; avoid unused imports.
+- Keep changes minimal: match naming, patterns, and error-handling style of the file.
+
+## Formatting conventions (manual; no `repo format`)
+
+There is **no** automated formatter in this repo. Still follow these so edits resemble what **Black**
+and **isort** would do—small diffs, predictable layout, easier future adoption if you add Ruff/Black later.
+
+- **Indentation:** 4 spaces; never tabs.
+- **Line length:** wrap long lines around **88–100** columns when it stays readable; prefer parentheses for continuation over backslashes.
+- **Quotes:** prefer **double-quoted** strings in new or heavily touched code; if a file is overwhelmingly single-quoted, match that file.
+- **Trailing commas:** use in multi-line calls, literals, and collections so the next line is a one-line diff.
+- **Blank lines (PEP 8):** two blank lines before top-level `def`/`class`; one blank line between methods; single blank line between logical sections inside a function when it helps.
+- **Spacing:** single space after commas and around `=` in keyword/default arguments; no extra spaces inside `()`, `[]`, `{}` unless aligning a deliberate block (rare).
+- **Dict / comprehensions:** prefer breaking across lines with trailing commas when they would exceed the line-length target.
+
+## Lint and CI
+
+- No project-enforced **Black / Ruff / isort** config is committed; do not assume a formatter runs in CI.
+- If you add local checks, scope them to `scripts/` (and any other Python roots you introduce).

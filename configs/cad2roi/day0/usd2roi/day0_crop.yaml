@@ -1,0 +1,47 @@
+# Day-0 multi-cell anchor crop config — author-once, run-as-is.
+#
+# Reads the labelled scan_grid render from day0_image.yaml and emits
+# per-cell anchor-rooted ROI crops. Keep `output.dir` aligned with the
+# render yaml's `output:` value and with the host -v $OUTPUT mount target.
+#
+# Run:
+#   python3 scripts/usd2roi/usd2roi_crop.py --config <this file>
+
+output:
+  # Container-absolute. The crop script reads
+  # <output.dir>/<crop.source>/ and writes <output.dir>/crop/. Must match
+  # day0_image.yaml `output:` exactly.
+  dir: /workspace/paidf-simulation/sdg_test_output
+
+crop:
+  # Day-0 source: read the labelled scan_grid render (no MI registration).
+  # `pattern: x*_y*` matches every x_idx/y_idx cell; multi-frame mode emits
+  # one subdir per cell under crop/component/.
+  source: trigger_0000
+  pattern: 'x*_y*'
+
+  # CUSTOMIZE: list only the *primary* component types you want as ROIs.
+  # Adjacent labelled meshes (pad, solder authored in `semantics:`) are
+  # pulled into the bbox automatically via the labelled connected
+  # component. Pure-pad / pure-silkscreen regions are dropped (no anchor).
+  classes: [capacitor, ic]
+
+  morph_kernel: 2          # px; close radius to merge adjacent labelled meshes
+  min_area: 50             # px²; reject smaller connected components
+  max_area: null           # px²; null = no upper cap
+  offset: 10               # px padding around each ROI bbox
+
+  # Filters carried over from scripts/postprocess/crop_components.py:
+  edge_skip: true          # drop ROIs whose tight bbox touches an image edge
+  min_coverage: 0.2        # min labelled-pixel fraction inside crop box (0 = off)
+
+  # Global cap on emitted ROIs across all cells. Stops iterating once
+  # this many ROIs have passed all filters; trailing CCs in the current
+  # cell and any later cells are dropped silently. null = no cap.
+  max_emit: null
+
+  # Pairwise bridge crops (off by default). Useful for "are these two
+  # ROIs bridged?" inspection.
+  bridge: false
+  bridge_dis: 30           # px; bbox edge-to-edge distance threshold
+  bridge_classes: []       # subset of crop.classes that participate; empty = any

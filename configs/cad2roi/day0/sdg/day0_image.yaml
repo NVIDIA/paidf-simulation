@@ -1,0 +1,171 @@
+# Day-0 ROI render config — author-once, run-as-is.
+#
+# Copy this file into your host $CONFIG dir, edit per board, and pass
+# the resulting yaml's container path to sdg_pipeline.py via --config.
+# Defaults ship runnable on the spark scene (assets/configs/spark/
+# pcba_target.yaml + assets/configs/spark/semantics.yaml). For other
+# boards, edit the CUSTOMIZE blocks below.
+
+pipeline_type: good
+
+# ─── Run controls ──────────────────────────────────────────────────────────
+seed: 0
+random_seed: 0
+max_image_count: -1
+num_triggers: 1
+
+# ─── Output ────────────────────────────────────────────────────────────────
+# Container-absolute path. Keep aligned with day0_crop.yaml `output.dir`
+# and with the host-side -v $OUTPUT:/workspace/paidf-simulation/sdg_test_output
+# mount target — render writes <output>/trigger_NNNN/, crop reads it.
+output: /workspace/paidf-simulation/sdg_test_output
+
+# ─── Output naming ─────────────────────────────────────────────────────────
+# Day-0 crop walks scan_grid cells via `pattern: x*_y*` in day0_crop.yaml,
+# so opt in to rename frame index `_NNNN` → `_x{i}_y{j}` after each trigger.
+rename_to_grid_index: true
+
+# ─── Render ────────────────────────────────────────────────────────────────
+resolution: [1024, 1024]
+
+# ─── PathTracing ───────────────────────────────────────────────────────────
+pathtracing:
+  spp: 1
+  total_spp: 32
+  max_bounces: 4
+
+# ─── Scan Grid ─────────────────────────────────────────────────────────────
+# x_num × y_num cells covering PCBA bbox + camera aperture.
+# CUSTOMIZE: bump for denser boards; 10 × 10 covers spark adequately.
+scan_grid:
+  x_num: 10
+  y_num: 10
+
+# ─── Mesh-level Semantics ──────────────────────────────────────────────────
+# CUSTOMIZE: rules below match the spark board's component prim hierarchy.
+# For a different board, replace the entire list with rules authored
+# against that board's USD prim paths. See references/semantic-rules.md
+# for glob syntax and the multi-class-on-same-prim pattern. Always
+# dry-run via `scripts/usd2roi/semantic_rules.py --show 5` before paying
+# for a Kit boot — fix any rule that reports `0 prim(s)`.
+semantics:
+  # --- 0805U_H150 ---
+  - match: "**/_0805U_H150/tn__0805U_H150_*/LibRef/tn__0805U_H040_/surface_0"
+    labels: {class: solder}
+  - match: "**/_0805U_H150/tn__0805U_H150_*/LibRef/tn__0805U_H040_/surface_1"
+    labels: {class: capacitor}
+
+  # --- PASTEMASK pad ---
+  - match: "**/PASTEMASK_TOP/Geometry/PASTEMASK_TOP__11450_bodies__0"
+    labels: {class: pad}
+
+  # --- 0402_H060 (surface 1,3,5 -> capacitor; 0,4,6 -> solder) ---
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_0_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_1_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_3_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_4_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_5_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_6_MASTER_MESH"
+    labels: {class: solder}
+
+  # --- 0402_H040 (surface 0,8 -> pad; 1,5,7 -> solder; 2,3,4,6 -> capacitor) ---
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_0_MASTER_MESH"
+    labels: {class: pad}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_8_MASTER_MESH"
+    labels: {class: pad}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_1_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_5_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_7_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_2_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_3_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_4_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_6_MASTER_MESH"
+    labels: {class: capacitor}
+
+  # --- 0402_LARGE_H070 (LibRef path uses _0402_LARGE_H080_) ---
+  - match: "**/_0402_LARGE_H070/tn__0402_LARGE_H070_*/LibRef/tn__0402_LARGE_H080_/surface_0"
+    labels: {class: capacitor}
+  - match: "**/_0402_LARGE_H070/tn__0402_LARGE_H070_*/LibRef/tn__0402_LARGE_H080_/surface_1"
+    labels: {class: solder}
+
+  # --- 115-1581-000_2 IC (whole component) ---
+  - match: "**/_115_1581_000_2/tn__1151581000_2DFN06_P065_020X020_T016X010_D_*"
+    labels: {class: ic}
+
+# ─── Lighting Randomization ────────────────────────────────────────────────
+lighting:
+  ring_light: true
+  exposure_range: [0.01, 1.0]
+  cone_angle_range: [90, 150]
+  cone_softness_range: [0.5, 1.0]
+
+  layers:
+    Inner_Red:
+      intensity: [5000, 8000]
+      color_r: [0.95, 1.0]
+      color_g: [0.0,  0.05]
+      color_b: [0.0,  0.05]
+    Middle_Green:
+      intensity: [2000, 4000]
+      color_r: [0.0,  0.05]
+      color_g: [0.95, 1.0]
+      color_b: [0.0,  0.05]
+    Outer_Blue:
+      intensity: [3000, 6000]
+      color_r: [0.0,  0.05]
+      color_g: [0.0,  0.05]
+      color_b: [0.95, 1.0]
+
+  white_light:
+    intensity: [3000, 8000]
+    color_r:   [0.8,  1.0]
+    color_g:   [0.8,  1.0]
+    color_b:   [0.8,  1.0]
+
+# ─── Camera Randomization ──────────────────────────────────────────────────
+# z_fixed must be a multiple of 90° for auto scan_grid to tile cleanly.
+camera_rotation:
+  x_range: [0, 0]
+  y_range: [0, 0]
+  z_fixed: -90
+
+# ─── Augmentation ──────────────────────────────────────────────────────────
+augmentation:
+  motion_blur:
+    probability: 0.8
+    alpha_range: [0.01, 0.3]
+    kernel_choices: [5, 7]
+
+# ─── Writer ────────────────────────────────────────────────────────────────
+# semantic_segmentation MUST be true; usd2roi_crop reads
+# semantic_segmentation_<idx>.png + the labels JSON for anchor-rooted CC.
+writer:
+  rgb: true
+  image_output_format: png
+
+  bounding_box_2d_tight: false
+  bounding_box_2d_loose: false
+  bounding_box_3d: false
+
+  semantic_segmentation: true
+  instance_id_segmentation: false
+  colorize_semantic_segmentation: true
+  colorize_instance_id_segmentation: false
+
+  distance_to_camera: false
+  distance_to_image_plane: false
+  colorize_depth: false
+
+  semantic_types: [class]
+  frame_padding: 4

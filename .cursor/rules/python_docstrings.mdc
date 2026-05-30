@@ -1,0 +1,416 @@
+---
+description: Python source code docstrings (pcb-aoi)
+globs: "*.py"
+---
+You are an expert at writing and maintaining Python docstrings to document functions and class properties and methods.
+
+## Project context (pcb-aoi)
+
+- Python under **`scripts/`** drives SDG, USD→ROI, procedural PCB layout, and Kit-based editors. This repo **does not** ship Omniverse **extensions** (`omni.ext.IExt`, `extension.toml`); do not write or assume extension lifecycle patterns unless the user explicitly asks for an extension.
+- **USD and prims:** Prefer **`pxr`** (`Usd`, `UsdGeom`, `UsdLux`, `UsdShade`, `Gf`, `Sdf`, `Vt`, …) and, in Kit, **`omni.usd`**. Do **not** require **`isaacsim.core.experimental`** (or similar high-level prim wrappers) in docstring examples, type hints, or narrative unless the surrounding module **already** uses those APIs.
+
+## General guidelines
+
+- Docstrings use Google-style format (Args, Returns, Raises sections).
+- Docstring paragraphs and sentences end with periods.
+- Place docstrings for modules, classes, functions, and class methods.
+- Never add, modify, refactor or delete code when adding or updating documentation.
+- Document all functions and class properties and methods in order and without skipping any. Be consistent.
+
+## Type annotations
+
+- **Do NOT include types in docstrings** — types belong in function signatures only.
+- For annotation syntax rules (PEP 604, no quoting, `from __future__ import annotations`),
+  see `python_codestyle.mdc`.
+
+### Type annotation consistency for parameters
+
+- Only include `| None` in a parameter's type annotation when:
+  1. The default value is `None` (e.g., `param: str | None = None`), OR
+  2. The function explicitly handles `None` as a valid input distinct from the default
+- Do NOT use `| None` when the parameter has a non-None default and `None` is not a supported input:
+  - **Wrong**: `visibility: bool | None = False` (implies None is accepted, but it isn't)
+  - **Correct**: `visibility: bool = False`
+- If a parameter has a non-None default but also accepts `None` for special behavior,
+  document this in the docstring (e.g., "Pass None to skip this step.")
+
+## Docstring style
+
+- Brief summary line just after opening triple quotes.
+- Write the summary line in **imperative mood** (a command), not third-person present tense.
+  This follows PEP 257: describe the function's effect as a command ("Do this", "Return that").
+  - **Correct** (imperative): `"""Load semantic rules from a YAML path."""`
+  - **Wrong** (third-person): `"""Loads semantic rules from a YAML path."""`
+  - **Correct** (imperative): `"""Return the orthographic camera width in stage units."""`
+  - **Wrong** (third-person): `"""Returns the orthographic camera width in stage units."""`
+  - For classes, a noun phrase is also acceptable: `"""YAML-driven semantic filter for USD prims."""`
+- Long description, separated by an empty line.
+  The long description should only appear as long as it is worthwhile to add relevant
+  information to clarify complex logic, help explain calling conventions, or edge cases.
+- List of all parameters defined under the 'Args' section (without types - types are in the signature).
+- Return description defined under the 'Returns' section (without type - type is in the signature).
+  **Do NOT use an unescaped colon (`:`) in the Returns description** — many **API docs / static doc**
+  generators (Sphinx is a common one) treat text before the first colon as a return type. Rephrase to
+  avoid the colon or escape it with a backslash (`\:`).
+- List of all raised exception types defined under the 'Raises' section.
+- Usage example, for public functions and class properties and methods, under the 'Example:' section using the `.. code-block:: python` directive.
+  Code must be separated by an empty line from the 'Example:' header.
+- Example sections for deprecated methods are optional and not required.
+
+## Class docstrings
+
+For classes, put constructor parameters (Args) and Raises in the **class docstring**, NOT in the `__init__` method.
+That layout reads clearly in the source and lines up with **API docs / static docs** generators (for example
+Sphinx or MkDocs extensions) if you ever publish reference docs.
+
+**Do NOT document default values** in Args descriptions - they are already visible in the function signature.
+
+```python
+class OrthoCameraAuthor:
+    """Author an orthographic camera on a USD stage.
+
+    Long description of how the camera is placed and which paths are used.
+
+    Args:
+        stage: Open USD stage to modify.
+        camera_prim_path: Absolute prim path for the camera.
+        width_world: Ortho width in world units.
+        **kwargs: Reserved for future options.
+
+    Raises:
+        ValueError: If ``camera_prim_path`` is empty or not absolute.
+    """
+
+    def __init__(
+        self,
+        stage: Usd.Stage,
+        camera_prim_path: str,
+        width_world: float = 0.1,
+        **kwargs: object,
+    ) -> None:
+        # No docstring needed here - Args are in the class docstring
+        ...
+```
+
+## Class attributes
+
+Document class attributes **inline below each attribute** using **`#:`** comments (RST-style attribute
+docstrings), NOT in an `Attributes:` section in the class docstring. This keeps documentation close to
+the code and is picked up by many **API docs / static doc** toolchains (for example Sphinx).
+
+```python
+class YamlSemanticCache:
+    """In-memory cache of parsed semantic-rule documents.
+
+    Args:
+        rules_path: Filesystem path to the rules YAML.
+    """
+
+    _rules_path: str
+    #: Path last passed to ``load``; used for error messages.
+
+    _mtime_ns: int | None = None
+    #: St_mtime_ns of the YAML file when loaded, if available.
+
+    _entries: dict[str, tuple[str, ...]] = {}
+    #: Map of rule name to tuple of USD kind or path tokens.
+```
+
+**Key points for class attributes:**
+- Use `#:` comment prefix directly below each attribute (RST-style; friendly to static doc generators)
+- Keep the description concise (one line when possible)
+- Do NOT include type information in the comment (types are in the annotation)
+- Do NOT document default values (visible in the assignment)
+
+## Method and function docstrings
+
+For methods and standalone functions, describe parameters and returns without repeating type information:
+
+```python
+def attach_semantic_layer(self, layer_identifier: str, **kwargs: object) -> None:
+    """Attach a semantic tagging layer to the writer configuration.
+
+    Args:
+        layer_identifier: Name of the semantic layer preset.
+        **kwargs: Forwarded to the writer implementation.
+
+    Raises:
+        ValueError: If ``layer_identifier`` is unknown.
+    """
+    ...
+
+def export_crop_manifest(self) -> dict[str, object]:
+    """Build the crop manifest for the current run.
+
+    Returns:
+        Dictionary describing each ROI crop path and metadata.
+    """
+    ...
+
+def meters_per_unit(self) -> tuple[float, float]:
+    """Return XY scale from layout space to meters.
+
+    Returns:
+        Tuple of (scale_x, scale_y) in meters per layout unit.
+    """
+    ...
+```
+
+**Avoid unescaped colons in Returns descriptions.** In common **API docs / static doc** setups (notably
+Sphinx Napoleon / Google-style), a colon inside the Returns body can be parsed as `type: description`,
+so text before the first colon may be misread as a return type. Rephrase to remove the colon or escape
+it with `\:`.
+
+```python
+# BAD — static doc generators may treat "Dictionary with keys" as a return type
+def export_tags(self) -> dict:
+    """Export prim tags.
+
+    Returns:
+        Dictionary with keys: "kind", "path", "score".
+    """
+    ...
+
+# GOOD - rephrased to avoid the colon
+def export_tags(self) -> dict:
+    """Export prim tags.
+
+    Returns:
+        Dictionary with "kind", "path", and "score" keys.
+    """
+    ...
+
+# GOOD - colon escaped with backslash
+def export_tags(self) -> dict:
+    """Export prim tags.
+
+    Returns:
+        Dictionary with keys\: "kind", "path", "score".
+    """
+    ...
+```
+
+## Optional return types
+
+When a function can return `None`, use `T | None` in the type annotation.
+The docstring description should explain when `None` is returned.
+
+```python
+def read_rules_mtime(self) -> int | None:
+    """Return the cached YAML modification time.
+
+    Returns:
+        St_mtime_ns if the file was read successfully, None if the path is missing.
+    """
+    ...
+
+def resolve_output_dir(self) -> str | None:
+    """Resolve the output directory for the run.
+
+    Returns:
+        Absolute directory path, or None if not configured.
+    """
+    ...
+
+def bbox_extent_xy(self) -> tuple[float, float] | None:
+    """Return axis-aligned extent in layout units.
+
+    Returns:
+        Tuple of (extent_x, extent_y) if a bbox exists, None otherwise.
+    """
+    ...
+```
+
+**Key rules for optional returns:**
+1. Use `T | None` when the function can return `None` as a valid result
+2. Always explain the condition when `None` is returned (e.g., "if not initialized", "if unavailable")
+3. Do NOT return `None` when it indicates an error - raise an exception instead
+
+## Methods that do NOT need Example sections
+
+The following categories typically do **not** need Example sections because they are internal, framework-driven, or obvious:
+
+### Private methods
+Any method starting with `_` (e.g., `_build_ui`, `_on_click`, `_parse_line`) — internal use only.
+
+### Callback functions
+Functions or methods registered as event handlers (often named `*_callback`, `on_*`) — invoked by Kit, UI, or timers; optional examples only if the callback is part of a public plugin API (unusual in this repo).
+
+### Test methods and test files
+`setUp`, `tearDown`, `test_*` methods — called by test frameworks.
+Test helper functions in test files (e.g., `_create_test_*`, factory functions) have relaxed requirements.
+
+### Deprecated methods
+Example sections are optional for deprecated methods. Include them only if they add value.
+
+### Thin CLI `main()` entrypoints
+Optional one-line examples; not required if the module is only run as a script.
+
+## Example section best practices
+
+### Empty line after imports
+
+In example code blocks, place an empty line after import statements, consistent with common formatter
+conventions. This keeps examples readable.
+
+```python
+def open_board_stage(usd_path: str) -> "Usd.Stage":
+    """Open a PCB layout USD for inspection.
+
+    Args:
+        usd_path: Absolute path to the ``.usd`` or ``.usda`` file.
+
+    Returns:
+        Open stage in read-only mode.
+
+    Example:
+
+    .. code-block:: python
+
+        from pxr import Usd
+
+        stage = Usd.Stage.Open("/tmp/Board.usda")  # doctest: +NO_CHECK
+    """
+    ...
+```
+
+Use **`pxr` / `Usd`** and real modules under **`scripts/`** in examples instead of **`isaacsim.core.experimental`** unless the documented API truly lives in that package.
+
+### Print or display results for verification
+
+Rather than silently storing a result in a variable, either call the method without storing the result
+(which causes it to be printed in doctest) or explicitly print the stored variable. This provides:
+
+- **Extra verification**: Acts as an implicit test case in the docstring testing system, catching
+  regressions even when no explicit test exists for the method.
+- **User clarity**: Allows users to identify the expected data type, value, and format just by
+  reading the example.
+
+```python
+# BAD - result is silently stored, no verification or output shown
+>>> paused = writer.is_paused()
+
+# GOOD - result is displayed, showing expected type and value
+>>> writer.is_paused()  # doctest: +NO_CHECK
+False
+
+# GOOD - result is stored and printed, useful when the variable is needed later
+>>> manifest = writer.export_crop_manifest()  # doctest: +NO_CHECK
+>>> print(sorted(manifest.keys()))  # doctest: +NO_CHECK
+['rois', 'version']
+```
+
+### Class instantiation only in the class example
+
+It is not necessary to instantiate the class in every method's example. Instantiate the class only in
+the class-level (or `__init__`) Example section. Other methods' examples should assume the instance
+already exists and focus solely on showcasing their own usage. This avoids repetitive boilerplate and
+keeps examples concise.
+
+```python
+class CropWriter:
+    """Write ROI crops according to a run configuration.
+
+    Args:
+        output_root: Base directory for emitted PNGs.
+
+    Example:
+
+    .. code-block:: python
+
+        from pathlib import Path
+
+        from example.writer import CropWriter  # doctest: +SKIP
+
+        writer = CropWriter(Path("/tmp/out"))  # doctest: +NO_CHECK
+    """
+
+    def is_paused(self) -> bool:
+        """Check if writing is paused.
+
+        Returns:
+            True if paused, False otherwise.
+
+        Example:
+
+        .. code-block:: python
+
+            >>> writer.is_paused()  # doctest: +NO_CHECK
+            False
+        """
+        ...
+
+    def set_stride(self, value: int) -> None:
+        """Set the scan stride for grid crops.
+
+        Args:
+            value: Stride in cells.
+
+        Example:
+
+        .. code-block:: python
+
+            >>> writer.set_stride(2)
+        """
+        ...
+```
+
+## Inline comments
+
+When referring to a variable name, function name, class name, parameter name, prim path, or other
+source identifier in an inline comment or `#:` attribute comment, wrap it in backticks so it reads
+clearly in **API docs / static docs** and stands out visually in source.
+
+```python
+# BAD - identifier blends in with prose
+# Traverse under World/PCBA for mesh prims
+x = position[0]  # Extract x from position
+
+# GOOD - identifier is backtick-quoted
+# Traverse under `/World/PCBA` for mesh prims
+x = position[0]  # Extract `x` from `position`
+```
+
+This also applies to `#:` class attribute comments:
+
+```python
+_rules_path: str = ""
+#: Filesystem path passed to ``load``; empty until ``load`` succeeds.
+```
+
+**When to backtick:**
+- Variable and attribute names (e.g., `self._stage`, `crop_size`)
+- Function and method names (e.g., `export_crop_manifest()`, `load()`)
+- Class names (e.g., `OrthoCameraAuthor`, `UsdGeom.Camera`)
+- Parameter names referenced outside their Args section (e.g., `camera_prim_path`)
+- USD prim paths or property names (e.g., `/World/Camera`, `xformOp:translate`)
+- Constants and enum members (e.g., `MAX_ROIS`, `UsdGeom.Tokens.orthographic`)
+
+**When NOT to backtick:**
+- Common English words that happen to match a name (use judgment)
+- Types used generically in prose (e.g., "returns a dictionary" — no backticks needed)
+
+## Key rules (Google Style)
+
+1. **Args format**: `param_name: Description.` - NO types (types are in the signature)
+2. **Returns format**: `Description.` - NO type prefix (type is in the signature). Avoid unescaped colons in the description (many **API docs / static doc** generators, e.g. Sphinx, parse text before `:` as a return type); rephrase or escape with `\:`
+3. **Raises format**: `ExceptionType: Description.`
+4. **Never use `param` prefix**: Write `param_name:` not `param param_name:`
+5. **Constructor Args go in class docstring**: Not in `__init__` method
+6. **Multi-line descriptions**: Indent continuation lines by 4 spaces
+7. **Do NOT document default values**: Default values are visible in function signatures and API docs; documenting them in docstrings is redundant and creates maintenance burden when defaults change
+8. **Optional returns**: Use `T | None` when `None` is a valid return value; explain when `None` is returned
+9. **Type annotation style**: See `python_codestyle.mdc` for PEP 604 syntax, no-quoting, and `from __future__ import annotations`
+10. **No Examples for**: private `_*`, tests (`setUp`, `tearDown`, `test_*`), most callbacks, deprecated APIs (optional), thin `main()` (optional)
+11. **Empty line after imports in examples**: Separate import statements from code with a blank line
+12. **Display results in examples**: Avoid silently storing results; show expected output for verification
+13. **Instantiate class only once**: Create the instance in the class/`__init__` example; other methods assume it exists
+14. **Backtick identifiers in comments**: Wrap variable, function, class, parameter, and prim path names in backticks when referenced in inline comments or `#:` attribute comments
+15. **Imperative mood for summary lines**: Write "Load the rules" not "Loads the rules"; class summaries may use noun phrases
+16. **USD examples**: Prefer `pxr` and `omni.usd` patterns used in this repo; do not default to `isaacsim.core.experimental` in examples unless the API being documented is from that package
+
+## Linting (this repository)
+
+**pcb-aoi** does not include `./repo.sh`, a pinned Ruff config, or CI jobs that run pydoclint/Ruff on every push. If you run linters locally, scope them to **`scripts/`** (and any other Python roots you add) and align flags with the docstring rules above (Google style, no types inside docstrings).
+
+If the project later adds `[tool.ruff]` or a pre-commit config, follow that configuration when editing.
