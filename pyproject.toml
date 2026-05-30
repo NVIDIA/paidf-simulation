@@ -1,0 +1,6 @@
+[project]
+license = {text = "Apache-2.0"}
+name = "paidf-simulation"
+version = "1.0.0"
+description = "Physical AI Data Factory Simulation: synthetic data generation, registration, and ROI extraction toolchain (use cases include PCB Defect Image Generation)"
+requires-python = ">=3.12"

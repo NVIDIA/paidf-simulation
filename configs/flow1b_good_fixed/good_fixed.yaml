@@ -1,0 +1,199 @@
+# Component-targeted close-up: pick a random instance of auto_locate_component,
+# auto-frame the camera, render per-sample fillet + tin-noise + ring-light variance.
+# Board substrate forced to vantablack so the component is the only thing lit.
+pipeline_type: good
+
+seed: 0
+random_seed: 0
+# 300 randomization samples at the same camera position.
+max_image_count: 300
+num_triggers: 1
+samples_per_position: 300
+
+output: ${PAIDF_SIM_ROOT}/sdg_test_output/flow1b_good_fixed
+
+resolution: [1920, 1080]              # 16:9 default (was [1024,1024])
+horizontal_aperture: 22.756           # ortho zoom; matches editor "zoom-to-capacitor"
+
+rig:
+  dome_radius: 184.0
+  light_radius_world: 18.0
+  light_intensity: 6204.0
+
+# Per-trigger ±20% rig randomization for surface-appearance diversity.
+randomize_rig:
+  dome_radius:  [147.2, 220.8]
+  light_radius: [14.4, 21.6]
+  intensity:    [4963.2, 7444.8]
+
+pathtracing:
+  spp: 1
+  total_spp: 64
+  max_bounces: 4
+  firefly_filter_enabled: true
+
+# auto_locate_component: substring match against scope names under pcba_root.
+# Override with component_list_override: [<substr>, ...] to randomise across a list.
+auto_locate_component: _0603_H100
+
+scan_grid:
+  z: 10                               # camera height only — x/y come from auto_locate
+
+lighting:
+  ring_light: true
+  exposure_range:
+  - -0.2
+  - 0.2
+  cone_angle_range:
+  - 108.0
+  - 132.0
+  cone_softness_range:
+  - 0.8
+  - 1.0
+  layers:
+    Inner_Red:
+      intensity:
+      - 5600
+      - 8400
+      color_r:
+      - 0.8
+      - 1.0
+      color_g:
+      - 0.0
+      - 0.2
+      color_b:
+      - 0.0
+      - 0.2
+    Middle_Green:
+      intensity:
+      - 5600
+      - 8400
+      color_r:
+      - 0.0
+      - 0.2
+      color_g:
+      - 0.8
+      - 1.0
+      color_b:
+      - 0.0
+      - 0.2
+    Outer_Blue:
+      intensity:
+      - 5600
+      - 8400
+      color_r:
+      - 0.0
+      - 0.2
+      color_g:
+      - 0.0
+      - 0.2
+      color_b:
+      - 0.8
+      - 1.0
+  white_light:
+    intensity:
+    - 620.4  # 10% of 6204
+    - 620.4
+    color_r:
+    - 1.0
+    - 1.0
+    color_g:
+    - 1.0
+    - 1.0
+    color_b:
+    - 1.0
+    - 1.0
+
+# body_color=[0,0,0] kills authored colours so only the ring light + fillet contribute.
+component_material:
+  body_color:     [0.0, 0.0, 0.0]
+  body_roughness: 0.97
+  body_metallic: 0.89
+  tin_color:      [0.0, 0.0, 0.0]
+  tin_roughness: 0.36
+  tin_metallic: 0.89
+  pad_color:      [0.0, 0.0, 0.0]
+  pad_roughness: 1.0
+  pad_metallic: 0.0
+
+board_material:
+  SolderMask:      {color: [0.0, 0.0, 0.0], roughness: 1.0, metallic: 0.0, diffuse_weight: 0.0, specular_weight: 0.0}
+  Silkscreen:      {color: [0.0, 0.0, 0.0], roughness: 1.0, metallic: 0.0, diffuse_weight: 0.0, specular_weight: 0.0}
+  OuterConductor:  {color: [0.0, 0.0, 0.0], roughness: 1.0, metallic: 0.0, diffuse_weight: 0.0, specular_weight: 0.0}
+  SolderPaste:     {color: [0.0, 0.0, 0.0], roughness: 1.0, metallic: 0.0, diffuse_weight: 0.0, specular_weight: 0.0}
+  InnerConductor:  {color: [0.0, 0.0, 0.0], roughness: 1.0, metallic: 0.0, diffuse_weight: 0.0, specular_weight: 0.0}
+  Dielectric:      {color: [0.0, 0.0, 0.0], roughness: 1.0, metallic: 0.0, diffuse_weight: 0.0, specular_weight: 0.0}
+
+solder_fillet:
+  enabled: true
+  fillet_sx: 0.14
+  fillet_sz: 0.24
+  adaptive_scale: false
+  inward_offset_mm: 2.6
+  z_offset_mm: 10.0
+  platform_start: 0.2
+  platform_end: 0.8
+  smoothness_y: 6.44
+  bump: 0.38
+  delta_x_decay: 10.8
+  noise_scale: 0.87
+  noise_octaves: 4
+  noise_amp: 0.01
+  resolution: 20
+  mat_color: [0.85, 0.85, 0.85]
+  mat_metallic: 1.0
+  mat_roughness: 0.2
+
+randomize_fillet:
+  smoothness_y:  [5.152, 7.728]
+  bump:          [0.304, 0.456]
+  delta_x_decay: [8.64, 12.96]
+
+tin_noise:
+  enabled: true
+  noise_amp:     0.18
+  noise_scale:   4.27
+  noise_octaves: 5.14
+  resolution:    75.76
+  bump_factor:   0.24
+  texture_scale: 17.62
+
+randomize_tin_noise:
+  noise_amp:     [0.144, 0.216]
+  noise_scale:   [3.416, 5.124]
+  noise_octaves: [4.112, 6.168]
+  resolution:    [60.608, 90.912]
+  bump_factor:   [0.192, 0.288]
+  texture_scale: [14.096, 21.144]
+
+camera_rotation:
+  x_range: [0, 0]
+  y_range: [0, 0]
+  z_fixed: 0
+
+# Motion blur off — fixed camera, no perceived motion.
+augmentation:
+  motion_blur:
+    enabled: false
+    probability: 0.0
+    alpha_range: [0.0, 0.0]
+    kernel_choices: [5]
+
+writer:
+  rgb: true
+  image_output_format: png
+  bounding_box_2d_tight: true
+  bounding_box_2d_loose: false
+  bounding_box_3d: false
+  semantic_segmentation: false
+  instance_id_segmentation: false
+  colorize_semantic_segmentation: true
+  semantic_types: [class]
+  frame_padding: 4
+
+# ─── Crop (skill-consumed) ─────────────────────────────────────────────────
+# Read by /simulation, not by sdg_pipeline.py. Disabled here: the
+# camera is auto-framed on one component via auto_locate_component, so the
+# full frame already IS the crop.
+crop:
+  enabled: false

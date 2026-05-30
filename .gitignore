@@ -1,0 +1,83 @@
+# Environment & secrets
+.env
+.env.*
+
+# Hidden folders
+_*/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.ruff_cache/
+.ruff-tool/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Shell dotfiles (created by Claude Code sandbox)
+.bash_profile
+.bashrc
+.zshrc
+.zprofile
+.profile
+.gitconfig
+.ripgreprc
+
+# Claude Code / MCP
+.claude/agents
+.claude/commands
+.claude/skills/docker-patterns
+.claude/settings.json
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/*.lock
+.mcp.json
+.gitmodules
+
+# SDG outputs
+/sdg_*/
+config/runs/
+configs/runs/
+output/
+
+test/*
+
+config/*
+ROI_Output/*
+*.pdf
+*.html
+
+assets/
+# But do track skill assets (`.agents/skills/*/assets/...`); the top-level
+# `assets/` ignore was too broad and was also masking the per-skill
+# config symlinks.
+!.agents/skills/*/assets/
+!.agents/skills/*/assets/**
+
+# Per-resolution / per-mode smoke configs paired with the verification
+# drivers. Hardcoded output paths under sdg_test_output/ so they only
+# work on the maintainer's machine.
+configs/sdg/test_*.yaml
+
+_*
+# Local convenience symlinks for pipeline assets — point at user-specific
+# scene / component USD source dirs outside the repo. Not part of the MR.
+/assets
+/scripts/procedural_board/assets

@@ -1,0 +1,117 @@
+# Flow 4 — USD2ROI Day1 / single config drives 3 stages (render + register + crop)
+# Pass via: --config configs/cad2roi/day1/replicator/usd2roi_target.yaml
+# (each stage script reads it independently — no --pcba-config here, semantics inline)
+
+scene: ${PCB_USD_PATH}
+
+# === Step 1: Semantic rules ===
+# Glob: `**` = any chars (incl. /); `*` = within one segment; `?` = single char.
+semantics:
+  # --- 0805U_H150 ---
+  - match: "**/_0805U_H150/tn__0805U_H150_*/LibRef/tn__0805U_H040_/surface_0"
+    labels: {class: solder}
+  - match: "**/_0805U_H150/tn__0805U_H150_*/LibRef/tn__0805U_H040_/surface_1"
+    labels: {class: capacitor}
+
+  # --- PASTEMASK pad ---
+  - match: "**/PASTEMASK_TOP/Geometry/PASTEMASK_TOP__11450_bodies__0"
+    labels: {class: pad}
+
+  # --- 0402_H060 ---
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_0_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_1_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_3_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_4_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_5_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H060/tn__0402_H060_*/LibRef/_0402_H060/Geometry/Components/_0402_H060/surface_6_MASTER_MESH"
+    labels: {class: solder}
+
+  # --- 0402_H040: surface 0,8 -> pad ; 1,5,7 -> solder ; 2,3,4,6 -> capacitor ---
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_0_MASTER_MESH"
+    labels: {class: pad}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_8_MASTER_MESH"
+    labels: {class: pad}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_1_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_5_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_7_MASTER_MESH"
+    labels: {class: solder}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_2_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_3_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_4_MASTER_MESH"
+    labels: {class: capacitor}
+  - match: "**/_0402_H040/tn__0402_H040_*/LibRef/_0402_H040/Geometry/Components/_0402_H040/surface_6_MASTER_MESH"
+    labels: {class: capacitor}
+
+  # --- 0402_LARGE_H070 (LibRef path uses _0402_LARGE_H080_) ---
+  - match: "**/_0402_LARGE_H070/tn__0402_LARGE_H070_*/LibRef/tn__0402_LARGE_H080_/surface_0"
+    labels: {class: capacitor}
+  - match: "**/_0402_LARGE_H070/tn__0402_LARGE_H070_*/LibRef/tn__0402_LARGE_H080_/surface_1"
+    labels: {class: solder}
+
+  # --- 115-1581-000_2 IC (whole component) ---
+  - match: "**/_115_1581_000_2/tn__1151581000_2DFN06_P065_020X020_T016X010_D_*"
+    labels: {class: ic}
+
+# === Step 2: Single capture ===
+camera:
+  translate: [-55.4, 2]                        # [x, y] world coords (mm); z fixed at 5000
+  horizontal_aperture: 97                      # ortho extent in 0.1 × world units (mm * 10)
+resolution: [640, 480]                          # match real photo aspect ratio
+
+pathtracing:
+  spp: 1
+  total_spp: 32
+  max_bounces: 4
+
+writer:
+  rgb: true
+  semantic_segmentation: true
+  colorize_semantic_segmentation: true
+  bounding_box_2d_tight: false
+  bounding_box_2d_loose: false
+  semantic_types: [class]                      # must list every label key your rules use
+  frame_padding: 4
+  image_output_format: png
+
+# === Step 3: Registration ===
+# TUNE-PATH: replace with your real PCB photo path (relative to repo root or container WORKDIR /workspace/paidf-simulation).
+real_image: scripts/usd2roi/input/real.png
+
+registration:
+  sx_range: [0.9, 1.1, 0.02]                  # [min, max, step] — search range for X scale
+  sy_range: [0.9, 1.1, 0.02]                  # [min, max, step] — search range for Y scale
+  rot_range_deg: [-0.1, 0.1, 0.05]            # tight: real PCB image has near-zero rotation
+  shift_range: 100                            # ± px for tx/ty
+  shift_step: 1                               # px
+  pyr_levels: 3                               # image pyramid levels (coarse → fine)
+  bins: 64                                    # histogram bins for MI
+  no_resize: true                             # skip pre-resize; preserve sub-pixel detail
+  gpu: true                                   # auto / true / false
+  min_mi: 0.5                                 # exit 2 if MI after < this; null = disable
+
+# === Step 4: Per-ROI label-based crop ===
+crop:
+  classes: [capacitor, solder, pad, ic]       # which classes to extract ROIs for
+  morph_kernel: 2                             # px close radius — merge adjacent labelled meshes
+  min_area: 50                                # px²; reject smaller connected components
+  max_area: null                              # px²; null = no upper cap
+  offset: 10                                  # px padding around each ROI bbox
+
+  # Optional pairwise crops covering two nearby ROIs in one bbox.
+  bridge: true                                # turn pairwise bridge crops on
+  bridge_dis: 30                              # px; bbox edge-to-edge distance threshold
+  bridge_classes: [capacitor]                 # only ROIs whose dominant_class is in this list pair
+
+# === Output ===
+output:
+  # TUNE-PATH: replace <run_name> before running. Container path mapped via -v $PCB:/workspace/paidf-simulation.
+  dir: /workspace/paidf-simulation/sdg_test_output/day1_<run_name>

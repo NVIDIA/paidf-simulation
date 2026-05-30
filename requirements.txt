@@ -1,0 +1,8 @@
+# Runtime deps installed in the Docker container beyond the Isaac Sim base.
+# Versions sourced from the container image (paidf-simulation:sqa).
+# All versions pinned; regenerate with: licensecheck --requirements-paths requirements.txt
+numpy==2.4.6
+Pillow==12.2.0
+aiohttp==3.13.5
+PyYAML==6.0.3
+usd-core==26.5

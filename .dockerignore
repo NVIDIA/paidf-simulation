@@ -1,0 +1,49 @@
+# Build context exclusions for `docker build`.
+# Goal: keep the context small (source code only); never copy assets, outputs,
+# git history, or local caches.
+
+# Docs / external references
+*.pdf
+*.html
+
+# Git
+.git
+.git/**
+.gitignore
+
+# Python caches / local virtualenvs
+**/__pycache__
+**/__pycache__/**
+*.pyc
+*.pyo
+.venv
+.venv/**
+venv
+venv/**
+
+# Editor / IDE / OS junk
+.idea
+.idea/**
+.vscode
+.vscode/**
+.DS_Store
+
+# Scene / CAD / material input — must be mounted at runtime, never baked
+# in. Includes IP-sensitive USDs / real PCB photos / mask data; the
+# container reads them via a host volume mount.
+assets
+assets/**
+scripts/usd2roi/input
+scripts/usd2roi/input/**
+
+# Pipeline outputs (must not be baked into the image)
+scripts/usd2roi/output
+scripts/usd2roi/output/**
+sdg_test_output
+sdg_test_output/**
+output
+output/**
+
+# Skill / claude metadata is not needed in the runtime image
+.claude
+.claude/**

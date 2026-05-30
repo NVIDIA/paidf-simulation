@@ -1,0 +1,19 @@
+# Flow 5 — USD2ROI Day0 / PCBA target (Stage 1 of 2)
+# Pass via: --pcba-config configs/cad2roi/spark/pcba_target.yaml
+
+# Optional override (uncomment to set ortho aperture floor for cell overlap,
+# or hap for perspective). Otherwise the USD-authored aperture is used.
+# horizontal_aperture: 200.0
+
+scene: ${PCB_USD_PATH}
+
+camera_path: /World/camera_light/Camera
+camera_xform_path: /World/camera_light
+ring_light_root: /World/camera_light/aoi_ring_light
+
+pcba_root: /World/pcba_main_s_detail/PCBA/tn__60014242BASEA04_fM9E
+# component_types:
+#   - _0805U_H150
+#   - _0402_H060
+#   - _0402_H040
+#   - _0402_LARGE_H070
