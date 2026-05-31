@@ -429,6 +429,6 @@ User EXPLICITLY mentions cad2roi / usd2roi / ROI / MI alignment / crop / bridge?
 - `configs/README.md`: feature table of every config under `configs/`. (Currently empty by design; populate when stable.)
 - `configs/lighting_example/README.md`: per-lighting-flag explanation
 - `configs/components.yaml`: master list and named subsets
-- `.agents/skills/<skill>/references/`: per-skill reference material
-- `.agents/skills/simulation/evals/evals.json`: merged golden test prompts (single-flow + roi + router-discrimination cases)
+- `skills/<skill>/references/`: per-skill reference material
+- `skills/simulation/evals/evals.json`: flat nvcarps schema (15 cases — `[{id, question, expected_skill, ground_truth, expected_behavior[]}]`) consumed by nvcarps Tier 3 live agent evaluation
 - `sdg_test_output/<run_name>/prompt_metadata.json`: per-run sidecar (prompt, intent, configs, overrides, frame counts)

@@ -7,9 +7,9 @@ This skill is ready for commercial/non-commercial use. <br>
 NVIDIA <br>
 
 ### License/Terms of Use: <br>
-Apache 2.0 <br>
+Apache-2.0 <br>
 ## Use Case: <br>
-Developers and engineers generating synthetic training data for PCB automated optical inspection (AOI) using Docker-backed simulation pipelines. <br>
+Developers and engineers generating synthetic image data for PCB automated optical inspection (AOI) training, including good/defect/missing/lighting renders, paired ChangeNet datasets, and per-component ROI crops with optional mutual-information registration. <br>
 
 ### Deployment Geography for Use: <br>
 Global <br>
@@ -19,11 +19,17 @@ Risk: Review before execution as proposals could introduce incorrect or misleadi
 Mitigation: Review and scan skill before deployment. <br>
 
 ## Reference(s): <br>
-- [PAIDF Simulation Repository](https://github.com/NVIDIA/paidf-simulation.git) <br>
+- [SKILL.md](SKILL.md) <br>
 - [Single-Flow Stages](references/single-flow/stages.md) <br>
-- [ROI Stages](references/roi/stages.md) <br>
+- [Single-Flow Routing](references/single-flow/routing.md) <br>
 - [Single-Flow Overrides](references/single-flow/overrides.md) <br>
+- [Single-Flow Local Mode](references/single-flow/local-mode.md) <br>
+- [Single-Flow Troubleshooting](references/single-flow/troubleshooting.md) <br>
+- [ROI Stages](references/roi/stages.md) <br>
+- [ROI Day-0](references/roi/day0.md) <br>
+- [ROI Day-1](references/roi/day1.md) <br>
 - [ROI Semantic Rules](references/roi/semantic-rules.md) <br>
+- [ROI Troubleshooting](references/roi/troubleshooting.md) <br>
 
 
 ## Skill Output: <br>
@@ -33,13 +39,13 @@ Mitigation: Review and scan skill before deployment. <br>
 **Other Properties Related to Output:** [None] <br>
 
 ## Evaluation Agents Used: <br>
-- Claude Code (`claude-code`) <br>
-- Codex (`codex`) <br>
+- claude-code <br>
+- codex <br>
 
 
 
 ## Evaluation Tasks: <br>
-Evaluated against 15 internal skill evaluation tasks with 2 attempts per task (pass threshold 50%). <br>
+Evaluated against 15 evaluation tasks (15 positive skill-activation cases). 2 attempts per task, 50% pass threshold. NVSkills-Eval profile: external. <br>
 
 ## Evaluation Metrics Used: <br>
 Reported benchmark dimensions: <br>
@@ -63,11 +69,11 @@ Underlying evaluation signals used in this run: <br>
 ## Evaluation Results: <br>
 | Dimension | Num | `claude-code` | `codex` |
 |---|---:|---:|---:|
-| Security | 8 | 97% (-3%) | 100% (+7%) |
-| Correctness | 8 | 82% (-1%) | 67% (+3%) |
-| Discoverability | 8 | 92% (+4%) | 74% (-0%) |
-| Effectiveness | 8 | 57% (-2%) | 51% (+4%) |
-| Efficiency | 8 | 81% (+6%) | 62% (-2%) |
+| Security | 8 | 100% (+3%) | 97% (+0%) |
+| Correctness | 8 | 83% (-0%) | 69% (+3%) |
+| Discoverability | 8 | 92% (+6%) | 73% (-2%) |
+| Effectiveness | 8 | 57% (-3%) | 50% (+7%) |
+| Efficiency | 8 | 80% (+10%) | 62% (-0%) |
 
 ## Skill Version(s): <br>
 1.0.0 (source: frontmatter, pyproject.toml) <br>

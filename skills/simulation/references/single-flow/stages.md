@@ -174,7 +174,7 @@ This track is designed to work on machines other than the maintainer's. On a fre
 
 1. `OUTPUT_PATH` when not named — uses `${PAIDF_SIM_ROOT}/sdg_test_output/<auto-slug>/`.
 2. Lighting — defaults to scene-authored.
-3. `PAIDF_SIM_ROOT` — defaults to the detected repo root (`pwd` ancestor with `.agents/skills/simulation/`); on a fresh machine outside a repo, **ASK**.
+3. `PAIDF_SIM_ROOT` — defaults to the detected repo root (`pwd` ancestor with `skills/simulation/`); on a fresh machine outside a repo, **ASK**.
 
 ## Stage 4 — Generate the derived YAML
 
