@@ -7,7 +7,7 @@ This benchmark summarizes 3-Tier Evaluation from NVSkills-Eval results for the s
 ## Evaluation Summary
 
 - Skill: `simulation`
-- Evaluation date: 2026-05-30
+- Evaluation date: 2026-05-31
 - NVSkills-Eval profile: `external`
 - Environment: `local`
 - Dataset: 15 evaluation tasks
@@ -54,25 +54,25 @@ Task composition is derived from the evaluation dataset when possible. Entries w
 
 | Dimension | Num | `claude-code` | `codex` |
 |---|---:|---:|---:|
-| Security | 8 | 97% (-3%) | 100% (+7%) |
-| Correctness | 8 | 82% (-1%) | 67% (+3%) |
-| Discoverability | 8 | 92% (+4%) | 74% (-0%) |
-| Effectiveness | 8 | 57% (-2%) | 51% (+4%) |
-| Efficiency | 8 | 81% (+6%) | 62% (-2%) |
+| Security | 8 | 100% (+3%) | 97% (+0%) |
+| Correctness | 8 | 83% (-0%) | 69% (+3%) |
+| Discoverability | 8 | 92% (+6%) | 73% (-2%) |
+| Effectiveness | 8 | 57% (-3%) | 50% (+7%) |
+| Efficiency | 8 | 80% (+10%) | 62% (-0%) |
 
 Score values show skill-assisted performance. Values in parentheses show uplift versus the no-skill baseline when baseline data is available.
 
 ## Tier 1: Static Validation Summary
 
-Tier 1 validation passed with observations. NVSkills-Eval ran 9 checks and found 10 total findings.
+Tier 1 validation passed with observations. NVSkills-Eval ran 9 checks and found 8 total findings.
 
 Top findings:
 
 - MEDIUM QUALITY/quality_correctness: README.md found inside skill folder (`skills/simulation/SKILL.md`)
-- MEDIUM SECURITY/Unknown (SQP-2): Using chmod 777 on the output directory makes it world-writable, meaning any process or user on the host system can read (`references/roi/day1.md:94`)
-- MEDIUM SECURITY/Unknown (SQP-2): Using --network host in a Docker run command removes network namespace isolation, allowing the container to bind to any  (`references/roi/day1.md:133`)
-- MEDIUM SECURITY/Unknown (SQP-2): The skill instructs the agent to execute shell commands on the host (outside any container), set environment variables,  (`references/single-flow/local-mode.md:20`)
+- MEDIUM SECURITY/Unknown (SQP-2): The skill acknowledges that crashes in local mode can leave temp files and locks under ~/.local/share/ov/ but only warns (`references/single-flow/local-mode.md:65`)
 - LOW QUALITY/quality_discoverability: Description very long (208 chars, recommend 50-150) (`skills/simulation/SKILL.md`)
+- LOW QUALITY/quality_discoverability: No '## Purpose' section (`skills/simulation/SKILL.md`)
+- LOW QUALITY/quality_reliability: No prerequisites/requirements documented (`skills/simulation/SKILL.md`)
 
 ## Tier 2: Deduplication Summary
 

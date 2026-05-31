@@ -213,7 +213,7 @@ Between Pass 1 and Pass 2, the pipeline log includes `[Pipeline] Hiding N compon
 
 Paired golden / defect data for ChangeNet-style training is handled by
 the simulation skill's **paired sub-mode** of the single-flow track.
-See [`.agents/skills/simulation/SKILL.md`](.agents/skills/simulation/SKILL.md)
+See [`skills/simulation/SKILL.md`](skills/simulation/SKILL.md)
 for routing detail; the implementation runs the `good` flow and the
 `defect` flow with the same `random_seed` and post-processes via
 `scripts/postprocess/build_pair_dataset.py`.
